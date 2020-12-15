@@ -1,21 +1,24 @@
-FROM ubuntu:14.04
+FROM cloudsuite/hhvm:3.30
 LABEL maintainer="Mark Sutherland <mark.sutherland@epfl.ch>"
-
+ENV DEBIAN_FRONTEND noninteractive
 USER root
 
 RUN apt-get update && \
-	apt-get install -y --force-yes software-properties-common && \
-	apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0x5a16e7281be7a449 && \
-	add-apt-repository "deb http://dl.hhvm.com/ubuntu $(lsb_release -sc)-lts-3.30 main" && \
-	apt-get update && \
-	apt-get install --force-yes -y \
+	apt-get install -y \
 	build-essential \
 	git \
-	nginx \
-	php5 php5-gd \
-	php5-mysql php5-curl \
-	php5-fpm php5-memcache \
-	hhvm
+	nginx \ 
+	wget
+
+RUN wget https://packages.sury.org/php/apt.gpg \
+    && apt-key add apt.gpg \
+    && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php7.list \
+    && apt update \
+    && apt-get -y install php7.3 php7.3-cgi php7.3-fpm \
+    && apt-get -y install \
+	php7.3-mysql \
+	php7.3-curl \
+	php-memcache  
 
 # Increase the open file limit
 COPY files/limits.conf.append /tmp/
@@ -41,7 +44,7 @@ COPY files/configure_hhvm.sh /tmp/
 
 RUN service nginx restart
 
-RUN service php5-fpm restart
+RUN service php7.3-fpm restart
 
 ADD bootstrap.sh /etc/bootstrap.sh
 RUN chown root:root /etc/bootstrap.sh
